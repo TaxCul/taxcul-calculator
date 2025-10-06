@@ -1,0 +1,34 @@
+import Chatbot from "@/components/Chatbot";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+import Header from "@/components/Header";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export const metadata = {
+  title: "Tax Calculator App",
+  description: "Developed by Code Mafia",
+};
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <div className="w-full min-h-screen flex flex-col bg-gradient-to-b from-gray-900 via-gray-950 to-black text-white">
+          {/* Header */}
+          <Header />
+          {children}
+          <Chatbot />
+        </div>
+      </body>
+    </html>
+  );
+}
