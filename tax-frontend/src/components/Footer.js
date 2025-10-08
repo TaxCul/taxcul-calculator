@@ -56,10 +56,7 @@ const Footer = () => {
             className="lg:col-span-1"
           >
             <Link href="/" className="flex items-center gap-3 mb-4 group">
-              <div className="p-2 bg-lime-400 rounded-xl group-hover:scale-110 transition-transform duration-300">
-                <Calculator className="w-6 h-6 text-gray-900" />
-              </div>
-              <span className="text-xl font-bold text-lime-400">CulverTax</span>
+                <img src="/img/taxcul.svg" alt="Tax Portal Logo" className="w-auto h-[28px]" />
             </Link>
             <p className="text-gray-400 text-sm mb-6 leading-relaxed">
               Professional tax calculation tools powered by AI. 
@@ -187,7 +184,7 @@ const Footer = () => {
             >
               <div className="flex items-center gap-2">
                 <Shield className="w-4 h-4 text-lime-400" />
-                <span>© {currentYear} CulverTax. All rights reserved.</span>
+                <span>© {currentYear} TaxCul. All rights reserved.</span>
               </div>
               
               <div className="hidden sm:block text-gray-600">•</div>
@@ -237,7 +234,7 @@ const Footer = () => {
             className="text-center mt-4"
           >
             <p className="text-gray-500 text-xs">
-              CulverTax provides calculation tools for informational purposes only. 
+              TaxCul provides calculation tools for informational purposes only. 
               Consult with a qualified tax professional for specific advice.
             </p>
           </motion.div>

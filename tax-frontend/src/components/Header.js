@@ -26,7 +26,7 @@ const Header = () => {
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="hover:opacity-90 transition">
-          <img src="/img/cul-logo-full.svg" alt="Tax Portal Logo" className="w-auto h-[100%]" />
+          <img src="/img/taxcul.svg" alt="Tax Portal Logo" className="w-auto h-[28px]" />
         </Link>
         {/* Nav Links */}
         <div className="hidden md:flex gap-8 text-sm font-medium">
