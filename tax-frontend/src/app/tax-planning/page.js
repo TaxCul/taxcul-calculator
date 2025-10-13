@@ -29,7 +29,519 @@ function cleanAIText(text) {
       .replace(/\\times/g, "×")
       .replace(/\s+/g, " ")
       .trim();
+}
+
+/* ---------- Enhanced Export Components ---------- */
+const ExportModal = ({ isOpen, onClose, onExport, type, results, formState }) => {
+  const [companyName, setCompanyName] = useState("");
+  const [taxYear, setTaxYear] = useState(new Date().getFullYear());
+  const [includeCharts, setIncludeCharts] = useState(true);
+  const [includeAI, setIncludeAI] = useState(true);
+
+  if (!isOpen) return null;
+
+  const handleExport = () => {
+    onExport({
+      companyName,
+      taxYear,
+      includeCharts,
+      includeAI,
+      type
+    });
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-gray-800 rounded-2xl p-6 w-full max-w-md border border-lime-400/30">
+        <h3 className="text-xl font-bold text-lime-400 mb-4">
+          {type === 'pdf' ? '📄 Export PDF Report' : '📊 Export Excel Workbook'}
+        </h3>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Company Name *
+            </label>
+            <input
+              type="text"
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              placeholder="Enter company name"
+              className="w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600 
+                         focus:border-lime-400 focus:ring focus:ring-lime-400/40 outline-none"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Tax Year
+            </label>
+            <input
+              type="number"
+              value={taxYear}
+              onChange={(e) => setTaxYear(e.target.value)}
+              className="w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600 
+                         focus:border-lime-400 focus:ring focus:ring-lime-400/40 outline-none"
+            />
+          </div>
+
+          {type === 'pdf' && (
+            <>
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="includeCharts"
+                  checked={includeCharts}
+                  onChange={(e) => setIncludeCharts(e.target.checked)}
+                  className="w-4 h-4 text-lime-400 bg-gray-700 border-gray-600 rounded focus:ring-lime-400"
+                />
+                <label htmlFor="includeCharts" className="text-sm text-gray-300">
+                  Include charts and visualizations
+                </label>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="includeAI"
+                  checked={includeAI}
+                  onChange={(e) => setIncludeAI(e.target.checked)}
+                  className="w-4 h-4 text-lime-400 bg-gray-700 border-gray-600 rounded focus:ring-lime-400"
+                />
+                <label htmlFor="includeAI" className="text-sm text-gray-300">
+                  Include AI tax optimization recommendations
+                </label>
+              </div>
+            </>
+          )}
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-3 bg-gray-700 text-gray-300 rounded-lg font-medium hover:bg-gray-600 transition"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleExport}
+            disabled={!companyName.trim()}
+            className="flex-1 px-4 py-3 bg-lime-400 text-gray-900 rounded-lg font-medium hover:bg-lime-300 transition disabled:opacity-50"
+          >
+            Export {type === 'pdf' ? 'PDF' : 'Excel'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ---------- Professional PDF Export (Manual Table Implementation) ---------- */
+const exportComprehensivePDF = (results, formState, options) => {
+  // Dynamically import jsPDF to avoid SSR issues
+  import('jspdf').then(({ jsPDF }) => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    let yPosition = 20;
+    const lineHeight = 7;
+    const sectionSpacing = 15;
+
+    // Helper function to add text with automatic page breaks
+    const addTextWithBreaks = (text, x, y, maxWidth) => {
+      const lines = doc.splitTextToSize(text, maxWidth);
+      doc.text(lines, x, y);
+      return y + (lines.length * lineHeight);
+    };
+
+    // Header with Company Info
+    doc.setFillColor(32, 32, 32);
+    doc.rect(0, 0, pageWidth, 60, 'F');
+    
+    doc.setTextColor(132, 204, 22); // Lime color
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('TAX COMPUTATION REPORT', pageWidth / 2, 25, { align: 'center' });
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Company: ${options.companyName}`, 20, 40);
+    doc.text(`Tax Year: ${options.taxYear}`, pageWidth - 20, 40, { align: 'right' });
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth / 2, 40, { align: 'center' });
+
+    yPosition = 70;
+
+    // Executive Summary
+    doc.setFontSize(16);
+    doc.setTextColor(132, 204, 22);
+    doc.text('EXECUTIVE SUMMARY', 20, yPosition);
+    yPosition += sectionSpacing;
+
+    // Manual table implementation for Executive Summary
+    const summaryData = [
+      { label: "Gross Profit", value: `$${(results.comprehensive?.grossProfit || 0).toLocaleString()}` },
+      { label: "Operating Profit", value: `$${(results.comprehensive?.operatingProfit || 0).toLocaleString()}` },
+      { label: "Taxable Income", value: `$${(results.comprehensive?.taxableIncome || 0).toLocaleString()}` },
+      { label: "Corporate Tax (25%)", value: `$${(results.comprehensive?.taxDue || 0).toLocaleString()}` },
+      { label: "AIDS Levy (3%)", value: `$${(results.comprehensive?.aidsLevy || 0).toLocaleString()}` },
+      { label: "Total Tax Liability", value: `$${(results.comprehensive?.totalTax || 0).toLocaleString()}` }
+    ];
+
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    
+    summaryData.forEach((item, index) => {
+      if (yPosition > pageHeight - 20) {
+        doc.addPage();
+        yPosition = 20;
+      }
+      
+      doc.text(item.label, 20, yPosition);
+      doc.text(item.value, pageWidth - 30, yPosition, { align: 'right' });
+      yPosition += lineHeight;
+      
+      // Add separator line
+      if (index < summaryData.length - 1) {
+        doc.setDrawColor(200, 200, 200);
+        doc.line(20, yPosition + 2, pageWidth - 20, yPosition + 2);
+        yPosition += 14;
+      }
+    });
+
+    yPosition += sectionSpacing;
+
+    // Detailed Profit & Loss Breakdown
+    if (yPosition > pageHeight - 50) {
+      doc.addPage();
+      yPosition = 20;
+    }
+    
+    doc.setFontSize(14);
+    doc.setTextColor(132, 204, 22);
+    doc.text('PROFIT & LOSS DETAILS', 20, yPosition);
+    yPosition += 10;
+
+    const profitLossData = [
+      { label: "Sales Revenue", value: `$${(parseFloat(formState.sales) || 0).toLocaleString()}` },
+      { label: "Other Trading Income", value: `$${(parseFloat(formState.otherTradingIncome) || 0).toLocaleString()}` },
+      { label: "Total Revenue", value: `$${((parseFloat(formState.sales) || 0) + (parseFloat(formState.otherTradingIncome) || 0)).toLocaleString()}` },
+      { label: "Cost of Goods Sold", value: `$${(parseFloat(formState.costOfGoodsSold) || 0).toLocaleString()}` },
+      { label: "Gross Profit", value: `$${(results.comprehensive?.grossProfit || 0).toLocaleString()}` },
+      { label: "Operating Expenses", value: `$${(results.comprehensive?.operatingExpenses || 0).toLocaleString()}` },
+      { label: "Operating Profit", value: `$${(results.comprehensive?.operatingProfit || 0).toLocaleString()}` }
+    ];
+
+    doc.setFontSize(9);
+    doc.setTextColor(0, 0, 0);
+    
+    profitLossData.forEach((item, index) => {
+      if (yPosition > pageHeight - 20) {
+        doc.addPage();
+        yPosition = 20;
+      }
+      
+      doc.text(item.label, 20, yPosition);
+      doc.text(item.value, pageWidth - 30, yPosition, { align: 'right' });
+      yPosition += lineHeight;
+    });
+
+    yPosition += sectionSpacing;
+
+    // Tax Adjustments
+    if (yPosition > pageHeight - 50) {
+      doc.addPage();
+      yPosition = 20;
+    }
+    
+    doc.setFontSize(14);
+    doc.setTextColor(132, 204, 22);
+    doc.text('TAX ADJUSTMENTS', 20, yPosition);
+    yPosition += 10;
+
+    const taxAdjustments = [
+      { label: "Non-Taxable Income", value: "" },
+      { label: "  Dividends Received", value: `$${(parseFloat(formState.dividendReceived) || 0).toLocaleString()}` },
+      { label: "  Capital Receipts", value: `$${(parseFloat(formState.capitalReceipts) || 0).toLocaleString()}` },
+      { label: "  Profit on Asset Sales", value: `$${(parseFloat(formState.profitOnSale) || 0).toLocaleString()}` },
+      { label: "  Interest Income", value: `$${(parseFloat(formState.interestFinancial) || 0).toLocaleString()}` },
+      { label: "Non-Deductible Expenses", value: "" },
+      { label: "  Depreciation", value: `$${(parseFloat(formState.depreciation) || 0).toLocaleString()}` },
+      { label: "  Fines & Penalties", value: `$${(parseFloat(formState.finesPenaltiesTax) || 0).toLocaleString()}` },
+      { label: "  Donations", value: `$${(parseFloat(formState.donations) || 0).toLocaleString()}` }
+    ];
+
+    doc.setFontSize(9);
+    taxAdjustments.forEach((item) => {
+      if (yPosition > pageHeight - 20) {
+        doc.addPage();
+        yPosition = 20;
+      }
+      
+      doc.text(item.label, 20, yPosition);
+      if (item.value) {
+        doc.text(item.value, pageWidth - 30, yPosition, { align: 'right' });
+      }
+      yPosition += lineHeight;
+    });
+
+    yPosition += sectionSpacing;
+
+    // Capital Allowances
+    if (yPosition > pageHeight - 50) {
+      doc.addPage();
+      yPosition = 20;
+    }
+    
+    doc.setFontSize(14);
+    doc.setTextColor(132, 204, 22);
+    doc.text('CAPITAL ALLOWANCES', 20, yPosition);
+    yPosition += 10;
+
+    const capitalAllowances = [
+      { label: "Motor Vehicles", value: `$${(parseFloat(formState.motorVehicles) || 0).toLocaleString()}` },
+      { label: "Moveable Assets", value: `$${(parseFloat(formState.moveableAssets) || 0).toLocaleString()}` },
+      { label: "Commercial Buildings", value: `$${(parseFloat(formState.commercialBuildings) || 0).toLocaleString()}` },
+      { label: "Industrial Buildings", value: `$${(parseFloat(formState.industrialBuildings) || 0).toLocaleString()}` },
+      { label: "Lease Improvements", value: `$${(parseFloat(formState.leaseImprovements) || 0).toLocaleString()}` },
+      { label: "Total Capital Allowances", value: `$${(results.comprehensive?.capitalAllowances || 0).toLocaleString()}` }
+    ];
+
+    doc.setFontSize(9);
+    capitalAllowances.forEach((item, index) => {
+      if (yPosition > pageHeight - 20) {
+        doc.addPage();
+        yPosition = 20;
+      }
+      
+      // Make total row bold
+      if (index === capitalAllowances.length - 1) {
+        doc.setFont('helvetica', 'bold');
+      }
+      
+      doc.text(item.label, 20, yPosition);
+      doc.text(item.value, pageWidth - 30, yPosition, { align: 'right' });
+      yPosition += lineHeight;
+      
+      // Reset font
+      doc.setFont('helvetica', 'normal');
+    });
+
+    // Tax Optimization Recommendations
+    if (options.includeAI && results.comprehensive?.aiExplanation) {
+      if (yPosition > pageHeight - 80) {
+        doc.addPage();
+        yPosition = 20;
+      } else {
+        yPosition += sectionSpacing;
+      }
+      
+      doc.setFontSize(16);
+      doc.setTextColor(132, 204, 22);
+      doc.text('TAX OPTIMIZATION RECOMMENDATIONS', 20, yPosition);
+      yPosition += 15;
+
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      const aiText = cleanAIText(results.comprehensive.aiExplanation);
+      yPosition = addTextWithBreaks(aiText, 20, yPosition, pageWidth - 40);
+    }
+
+    // Footer on all pages
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(128, 128, 128);
+      doc.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+      doc.text(`Confidential - ${options.companyName} Tax Computation`, 20, pageHeight - 10);
+    }
+
+    // Save the PDF
+    doc.save(`tax-computation-${options.companyName.replace(/\s+/g, '-').toLowerCase()}-${options.taxYear}.pdf`);
+  }).catch(error => {
+    console.error('Error generating PDF:', error);
+    alert('Error generating PDF. Please try again.');
+  });
+};
+
+/* ---------- Enhanced Excel Export ---------- */
+const exportComprehensiveExcel = (results, formState, options) => {
+  const wb = XLSX.utils.book_new();
+  
+  // 1. Executive Summary Sheet
+  const summaryData = [
+    ['TAX COMPUTATION EXECUTIVE SUMMARY', '', '', ''],
+    ['', '', '', ''],
+    ['Company:', options.companyName, 'Tax Year:', options.taxYear],
+    ['Generated:', new Date().toLocaleDateString(), 'Period:', 'Annual'],
+    ['', '', '', ''],
+    ['FINANCIAL HIGHLIGHTS', '', 'AMOUNT ($)', ''],
+    ['Gross Profit', '', results.comprehensive?.grossProfit || 0, ''],
+    ['Operating Profit', '', results.comprehensive?.operatingProfit || 0, ''],
+    ['Taxable Income', '', results.comprehensive?.taxableIncome || 0, ''],
+    ['', '', '', ''],
+    ['TAX CALCULATION', '', 'AMOUNT ($)', 'RATE'],
+    ['Corporate Income Tax', '', results.comprehensive?.taxDue || 0, '25%'],
+    ['AIDS Levy', '', results.comprehensive?.aidsLevy || 0, '3%'],
+    ['Total Tax Liability', '', results.comprehensive?.totalTax || 0, ''],
+    ['', '', '', ''],
+    ['EFFECTIVE TAX RATES', '', 'VALUE', ''],
+    ['Effective Tax Rate', '', `${((results.comprehensive?.totalTax / (results.comprehensive?.taxableIncome || 1)) * 100).toFixed(2)}%`, ''],
+    ['Profit Margin', '', `${((results.comprehensive?.operatingProfit / (parseFloat(formState.sales) || 1)) * 100).toFixed(2)}%`, '']
+  ];
+
+  const ws1 = XLSX.utils.aoa_to_sheet(summaryData);
+  XLSX.utils.book_append_sheet(wb, ws1, "Executive Summary");
+
+  // 2. Detailed Profit & Loss Sheet (QPD Format)
+  const profitLossData = [
+    ['PROFIT AND LOSS STATEMENT', '', '', ''],
+    ['For the year ended', '31 December', options.taxYear, ''],
+    ['', '', '', ''],
+    ['REVENUE', 'NOTES', `$${options.taxYear}`, ''],
+    ['Sales', '', parseFloat(formState.sales) || 0, ''],
+    ['Other Trading Income', '', parseFloat(formState.otherTradingIncome) || 0, ''],
+    ['TOTAL REVENUE', '', `=C6+C7`, ''],
+    ['', '', '', ''],
+    ['COST OF SALES', '', '', ''],
+    ['Cost of Goods Sold', '', parseFloat(formState.costOfGoodsSold) || 0, ''],
+    ['GROSS PROFIT', '', `=C8-C10`, ''],
+    ['', '', '', ''],
+    ['OPERATING EXPENSES', '', '', ''],
+    ['Advertising & Marketing', '', parseFloat(formState.advertisingMarketing) || 0, ''],
+    ['Training & Events', '', parseFloat(formState.trainingEvent) || 0, ''],
+    ['Bank Charges', '', parseFloat(formState.bankCharges) || 0, ''],
+    ['IMTT', '', parseFloat(formState.imtt) || 0, ''],
+    ['Salaries & Wages', '', parseFloat(formState.salaries) || 0, ''],
+    ['TOTAL OPERATING EXPENSES', '', `=SUM(C14:C18)`, ''],
+    ['', '', '', ''],
+    ['OPERATING PROFIT', '', `=C11-C19`, ''],
+  ];
+
+  const ws2 = XLSX.utils.aoa_to_sheet(profitLossData);
+  XLSX.utils.book_append_sheet(wb, ws2, "Profit & Loss");
+
+  // 3. Tax Computation Sheet (ZIMRA Format)
+  const taxComputationData = [
+    ['INCOME TAX COMPUTATION', '', '', ''],
+    ['In terms of Income Tax Act [Chapter 23:06]', '', '', ''],
+    ['', '', '', ''],
+    ['PROFIT BEFORE TAX', '', results.comprehensive?.operatingProfit || 0, 'A'],
+    ['', '', '', ''],
+    ['ADD: NON-DEDUCTIBLE EXPENSES', '', '', ''],
+    ['Depreciation', '', parseFloat(formState.depreciation) || 0, ''],
+    ['Fines & Penalties', '', parseFloat(formState.finesPenaltiesTax) || 0, ''],
+    ['Donations', '', parseFloat(formState.donations) || 0, ''],
+    ['Disallowable Subscriptions', '', parseFloat(formState.disallowableSubscriptions) || 0, ''],
+    ['TOTAL ADDITIONS', '', `=SUM(C7:C10)`, 'B'],
+    ['', '', '', ''],
+    ['DEDUCT: NON-TAXABLE INCOME', '', '', ''],
+    ['Dividends Received', '', parseFloat(formState.dividendReceived) || 0, ''],
+    ['Capital Receipts', '', parseFloat(formState.capitalReceipts) || 0, ''],
+    ['Profit on Sale of Assets', '', parseFloat(formState.profitOnSale) || 0, ''],
+    ['Interest from Financial Inst.', '', parseFloat(formState.interestFinancial) || 0, ''],
+    ['TOTAL DEDUCTIONS', '', `=SUM(C13:C16)`, 'C'],
+    ['', '', '', ''],
+    ['DEDUCT: CAPITAL ALLOWANCES', '', '', ''],
+    ['Motor Vehicles', '', parseFloat(formState.motorVehicles) || 0, ''],
+    ['Moveable Assets', '', parseFloat(formState.moveableAssets) || 0, ''],
+    ['Commercial Buildings', '', parseFloat(formState.commercialBuildings) || 0, ''],
+    ['Industrial Buildings', '', parseFloat(formState.industrialBuildings) || 0, ''],
+    ['Lease Improvements', '', parseFloat(formState.leaseImprovements) || 0, ''],
+    ['TOTAL CAPITAL ALLOWANCES', '', `=SUM(C19:C23)`, 'D'],
+    ['', '', '', ''],
+    ['ADJUSTED TAXABLE INCOME', '', `=C4+B11-C17-D24`, 'E'],
+    ['Corporate Tax @ 25%', '', `=E25*0.25`, 'F'],
+    ['AIDS Levy @ 3% of Tax', '', `=F26*0.03`, 'G'],
+    ['TOTAL TAX LIABILITY', '', `=F26+G27`, 'H']
+  ];
+
+  const ws3 = XLSX.utils.aoa_to_sheet(taxComputationData);
+  XLSX.utils.book_append_sheet(wb, ws3, "Tax Computation");
+
+  // 4. Capital Allowances Schedule
+  const capitalAllowanceData = [
+    ['CAPITAL ALLOWANCES SCHEDULE', '', '', ''],
+    ['Asset Class', 'Cost/Value', 'Allowance Rate', 'Allowance Amount'],
+    ['Motor Vehicles', parseFloat(formState.motorVehicles) || 0, '25%', `=B3*0.25`],
+    ['Moveable Assets', parseFloat(formState.moveableAssets) || 0, '25%', `=B4*0.25`],
+    ['Commercial Buildings', parseFloat(formState.commercialBuildings) || 0, '5%', `=B5*0.05`],
+    ['Industrial Buildings', parseFloat(formState.industrialBuildings) || 0, '10%', `=B6*0.1`],
+    ['Lease Improvements', parseFloat(formState.leaseImprovements) || 0, '10%', `=B7*0.1`],
+    ['TOTAL ALLOWANCES', '', '', `=SUM(D3:D7)`]
+  ];
+
+  const ws4 = XLSX.utils.aoa_to_sheet(capitalAllowanceData);
+  XLSX.utils.book_append_sheet(wb, ws4, "Capital Allowances");
+
+  // 5. Tax Planning Recommendations
+  if (results.comprehensive?.aiExplanation) {
+    const recommendationsData = [
+      ['TAX OPTIMIZATION RECOMMENDATIONS', '', '', ''],
+      ['Generated by AI Tax Assistant', '', '', ''],
+      ['', '', '', ''],
+      ...cleanAIText(results.comprehensive.aiExplanation).split('. ').map(rec => [rec.trim()])
+    ];
+    
+    const ws5 = XLSX.utils.aoa_to_sheet(recommendationsData);
+    XLSX.utils.book_append_sheet(wb, ws5, "Tax Optimization");
   }
+
+  // Save the workbook
+  XLSX.writeFile(wb, `tax-planning-${options.companyName.replace(/\s+/g, '-').toLowerCase()}-${options.taxYear}.xlsx`);
+};
+
+/* ---------- Enhanced Export Buttons Component ---------- */
+const EnhancedExportButtons = ({ results, formState }) => {
+  const [exportModal, setExportModal] = useState({ open: false, type: '' });
+
+  const handleExport = (options) => {
+    if (options.type === 'pdf') {
+      exportComprehensivePDF(results, formState, options);
+    } else {
+      exportComprehensiveExcel(results, formState, options);
+    }
+  };
+
+  return (
+    <>
+      <div className="flex flex-col sm:flex-row gap-3 mt-6 p-4 bg-gradient-to-r from-lime-900/20 to-green-900/20 rounded-lg border border-lime-700/30">
+        <div className="flex-1">
+          <h4 className="text-lg font-semibold text-lime-300 mb-2">Professional Reports</h4>
+          <p className="text-sm text-gray-300">
+            Generate comprehensive PDF reports and Excel workbooks for tax filing and planning
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setExportModal({ open: true, type: 'pdf' })}
+            className="px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-500 transition flex items-center gap-2"
+          >
+            📄 Export PDF
+          </button>
+          <button
+            onClick={() => setExportModal({ open: true, type: 'excel' })}
+            className="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-500 transition flex items-center gap-2"
+          >
+            📊 Export Excel
+          </button>
+        </div>
+      </div>
+
+      <ExportModal
+        isOpen={exportModal.open}
+        onClose={() => setExportModal({ open: false, type: '' })}
+        onExport={handleExport}
+        type={exportModal.type}
+        results={results}
+        formState={formState}
+      />
+    </>
+  );
+};
 
 /* ---------- Shared UI Components ---------- */
 const ActionButton = ({ children, ...props }) => (
@@ -591,6 +1103,11 @@ export default function TaxPlanningPage() {
                   )}
                 </div>
               )}
+
+              {/* Enhanced Export Buttons */}
+              {results.comprehensive && (
+                <EnhancedExportButtons results={results} formState={formState} />
+              )}
             </div>
 
             {/* Visualization */}
@@ -600,17 +1117,6 @@ export default function TaxPlanningPage() {
               </h3>
               <div className="h-64">
                 <ComprehensiveChartPanel results={results} />
-              </div>
-              <div className="mt-4 flex gap-3">
-                <ActionButton onClick={() => exportComprehensivePlanToExcel(results, formState)}>
-                  Export Full Tax Plan
-                </ActionButton>
-                <button
-                  onClick={() => window.print()}
-                  className="bg-gray-700 px-4 py-2 rounded-lg hover:bg-gray-600 transition"
-                >
-                  Print Report
-                </button>
               </div>
             </div>
 
@@ -904,64 +1410,4 @@ function ExcelUploader({ onParse }) {
       </div>
     </div>
   );
-}
-
-/* Enhanced Export to Excel matching QPD format */
-function exportComprehensivePlanToExcel(results, formState) {
-  const XLSX = require("xlsx");
-  
-  // Create workbook with multiple sheets like the QPD template
-  const wb = XLSX.utils.book_new();
-  
-  // Profit and Loss Sheet
-  const profitLossData = [
-    ['Account', 'Actual Profit and Loss'],
-    ['Operating Income', ''],
-    ['Sales', formState.sales || 0],
-    ['Other Trading Income', formState.otherTradingIncome || 0],
-    ['Total Operating Income', (parseFloat(formState.sales) || 0) + (parseFloat(formState.otherTradingIncome) || 0)],
-    [''],
-    ['Cost of Goods Sold', ''],
-    ['Cost of Goods Sold', formState.costOfGoodsSold || 0],
-    ['Total COGS', formState.costOfGoodsSold || 0],
-    [''],
-    ['Gross Profit', ((parseFloat(formState.sales) || 0) + (parseFloat(formState.otherTradingIncome) || 0)) - (parseFloat(formState.costOfGoodsSold) || 0)],
-  ];
-  
-  const ws1 = XLSX.utils.aoa_to_sheet(profitLossData);
-  XLSX.utils.book_append_sheet(wb, ws1, "Profit and Loss");
-  
-  // Tax Computation Sheet
-  const taxComputationData = [
-    ['', '', '', '2025 $'],
-    ['Estimated Profit as per financial statements', '', '', results.comprehensive?.operatingProfit || 0],
-    [''],
-    ['A. Less Non taxable income', '', '', ''],
-    ['Dividend received', '', formState.dividendReceived || 0, ''],
-    ['Capital receipts', '', formState.capitalReceipts || 0, ''],
-    ['Profit on sale of assets', '', formState.profitOnSale || 0, ''],
-    ['Interest from financial institution', '', formState.interestFinancial || 0, ''],
-    ['Profit after non taxable receipts', '', '', results.comprehensive?.taxableIncome || 0],
-  ];
-  
-  const ws2 = XLSX.utils.aoa_to_sheet(taxComputationData);
-  XLSX.utils.book_append_sheet(wb, ws2, "Tax Computation");
-  
-  // Results Summary Sheet
-  const summaryData = [
-    ['Tax Planning Summary', ''],
-    ['Gross Profit', results.comprehensive?.grossProfit || 0],
-    ['Operating Profit', results.comprehensive?.operatingProfit || 0],
-    ['Taxable Income', results.comprehensive?.taxableIncome || 0],
-    ['Tax @ 25%', results.comprehensive?.taxDue || 0],
-    ['AIDS Levy @ 3%', results.comprehensive?.aidsLevy || 0],
-    ['Total Tax Liability', results.comprehensive?.totalTax || 0],
-    [''],
-    ['Generated on', new Date().toLocaleDateString()],
-  ];
-  
-  const ws3 = XLSX.utils.aoa_to_sheet(summaryData);
-  XLSX.utils.book_append_sheet(wb, ws3, "Summary");
-  
-  XLSX.writeFile(wb, `qpd-tax-plan-${new Date().toISOString().slice(0, 10)}.xlsx`);
 }
