@@ -190,9 +190,7 @@ const Footer = () => {
               <div className="hidden sm:block text-gray-600">•</div>
               
               <div className="flex items-center gap-2">
-                <span>Developed with</span>
-                <Heart className="w-4 h-4 text-red-400 fill-red-400" />
-                <span>by</span>
+                <span>Developed by</span>
                 <span className="text-lime-400 font-semibold">Code Mafia</span>
               </div>
             </motion.div>
