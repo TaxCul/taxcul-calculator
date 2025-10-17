@@ -543,6 +543,150 @@ const EnhancedExportButtons = ({ results, formState }) => {
   );
 };
 
+/* ---------- Enhanced Capital Allowance Calculator ---------- */
+const CapitalAllowanceCalculator = ({ formState, onUpdate }) => {
+  const [assetDetails, setAssetDetails] = useState({
+    motorVehicles: {
+      totalCostPrice: formState.motorVehicles || "",
+      datePurchased: "",
+      normalDepreciationRate: 0.2,
+      specialInitialAllowance: 0.5,
+      acceleratedWearTear: 0.25,
+      wearTear: 0.2
+    },
+    moveableAssets: {
+      totalCostPrice: formState.moveableAssets || "",
+      datePurchased: "",
+      normalDepreciationRate: 0.25,
+      specialInitialAllowance: 0.5,
+      acceleratedWearTear: 0.25,
+      wearTear: 0.1
+    },
+    commercialBuildings: {
+      totalCostPrice: formState.commercialBuildings || "",
+      datePurchased: "",
+      normalDepreciationRate: 0.1,
+      specialInitialAllowance: 0,
+      acceleratedWearTear: 0,
+      wearTear: 0.025
+    },
+    industrialBuildings: {
+      totalCostPrice: formState.industrialBuildings || "",
+      datePurchased: "",
+      normalDepreciationRate: 0.1,
+      specialInitialAllowance: 0,
+      acceleratedWearTear: 0,
+      wearTear: 0.05
+    },
+    leaseImprovements: {
+      totalCostPrice: formState.leaseImprovements || "",
+      datePurchased: "",
+      normalDepreciationRate: 0,
+      specialInitialAllowance: 0.5,
+      acceleratedWearTear: 0.25,
+      wearTear: 0.05
+    }
+  });
+
+  const calculateAllowances = (assetType, details) => {
+    const cost = parseFloat(details.totalCostPrice) || 0;
+    
+    const specialInitialAllowance = cost * details.specialInitialAllowance;
+    const acceleratedWearTear = cost * details.acceleratedWearTear;
+    const wearTear = cost * details.wearTear;
+    
+    // Total allowance is the maximum of the three types
+    const totalAllowance = Math.max(specialInitialAllowance, acceleratedWearTear, wearTear);
+    
+    return {
+      specialInitialAllowance,
+      acceleratedWearTear,
+      wearTear,
+      totalAllowance
+    };
+  };
+
+  const updateAssetDetail = (assetType, field, value) => {
+    const updatedDetails = {
+      ...assetDetails,
+      [assetType]: {
+        ...assetDetails[assetType],
+        [field]: value
+      }
+    };
+    
+    setAssetDetails(updatedDetails);
+    
+    // Update the main form state with calculated allowances
+    const allowances = calculateAllowances(assetType, updatedDetails[assetType]);
+    if (onUpdate) {
+      onUpdate(assetType, allowances.totalAllowance);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <h3 className="text-lg font-semibold text-lime-400">Detailed Capital Allowance Calculation</h3>
+      
+      {Object.entries(assetDetails).map(([assetType, details]) => {
+        const allowances = calculateAllowances(assetType, details);
+        
+        return (
+          <div key={assetType} className="bg-gray-700 p-4 rounded-lg border border-gray-600">
+            <h4 className="font-semibold text-lime-300 mb-3 capitalize">
+              {assetType.replace(/([A-Z])/g, ' $1')}
+            </h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Total Cost Price ($)</label>
+                <input
+                  type="number"
+                  value={details.totalCostPrice}
+                  onChange={(e) => updateAssetDetail(assetType, 'totalCostPrice', e.target.value)}
+                  className="w-full p-2 rounded bg-gray-600 text-white border border-gray-500 focus:border-lime-400 outline-none"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Date Purchased</label>
+                <input
+                  type="date"
+                  value={details.datePurchased}
+                  onChange={(e) => updateAssetDetail(assetType, 'datePurchased', e.target.value)}
+                  className="w-full p-2 rounded bg-gray-600 text-white border border-gray-500 focus:border-lime-400 outline-none"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+              <div className="bg-gray-800 p-3 rounded">
+                <div className="text-gray-400">Special Initial</div>
+                <div className="text-lime-400 font-medium">${allowances.specialInitialAllowance.toLocaleString()}</div>
+              </div>
+              
+              <div className="bg-gray-800 p-3 rounded">
+                <div className="text-gray-400">Accelerated W&T</div>
+                <div className="text-lime-400 font-medium">${allowances.acceleratedWearTear.toLocaleString()}</div>
+              </div>
+              
+              <div className="bg-gray-800 p-3 rounded">
+                <div className="text-gray-400">Wear & Tear</div>
+                <div className="text-lime-400 font-medium">${allowances.wearTear.toLocaleString()}</div>
+              </div>
+              
+              <div className="bg-gray-800 p-3 rounded border border-lime-400">
+                <div className="text-gray-400">Total Allowance</div>
+                <div className="text-lime-400 font-semibold">${allowances.totalAllowance.toLocaleString()}</div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 /* ---------- Shared UI Components ---------- */
 const ActionButton = ({ children, ...props }) => (
   <button
@@ -631,6 +775,13 @@ export default function TaxPlanningPage() {
   const handleChange = (k) => (e) =>
     setFormState((s) => ({ ...s, [k]: e.target.value }));
 
+  const handleCapitalAllowanceUpdate = (assetType, allowance) => {
+    setFormState(prev => ({
+      ...prev,
+      [assetType]: allowance.toString()
+    }));
+  };
+
   const callApi = async (endpoint, payload) => {
     const url = `${API_BASE}${endpoint}`;
     const res = await axios.post(url, payload);
@@ -669,7 +820,7 @@ export default function TaxPlanningPage() {
     setAIHistory((h) => [{ q: question, a: answer }, ...h].slice(0, 50));
   }
 
-  // Local calculation fallback
+  // Enhanced calculation with detailed capital allowances
   const calculateComprehensiveTaxLocal = (payload) => {
     const { profitLoss, taxComputation, capitalAllowance } = payload;
     
@@ -714,13 +865,43 @@ export default function TaxPlanningPage() {
     
     let taxableIncome = operatingProfit - totalNonTaxableIncome + totalNonDeductibleExpenses;
     
-    // Apply capital allowances
+    // Apply capital allowances with enhanced calculation
     let totalCapitalAllowance = 0;
+    let detailedCapitalAllowances = {};
+    
     if (capitalAllowance) {
-      totalCapitalAllowance = Object.values(capitalAllowance).reduce((sum, val) => {
-        return sum + (parseFloat(val) || 0);
-      }, 0);
+      // Calculate detailed allowances for each asset type
+      const assetRates = {
+        motorVehicles: { special: 0.5, accelerated: 0.25, wearTear: 0.2 },
+        moveableAssets: { special: 0.5, accelerated: 0.25, wearTear: 0.1 },
+        commercialBuildings: { special: 0, accelerated: 0, wearTear: 0.025 },
+        industrialBuildings: { special: 0, accelerated: 0, wearTear: 0.05 },
+        leaseImprovements: { special: 0.5, accelerated: 0.25, wearTear: 0.05 }
+      };
+      
+      Object.entries(capitalAllowance).forEach(([assetType, cost]) => {
+        const rates = assetRates[assetType];
+        const assetCost = parseFloat(cost) || 0;
+        
+        const specialAllowance = assetCost * rates.special;
+        const acceleratedAllowance = assetCost * rates.accelerated;
+        const wearTearAllowance = assetCost * rates.wearTear;
+        
+        // Use the maximum allowance for each asset
+        const assetAllowance = Math.max(specialAllowance, acceleratedAllowance, wearTearAllowance);
+        
+        detailedCapitalAllowances[assetType] = {
+          cost: assetCost,
+          specialAllowance,
+          acceleratedAllowance,
+          wearTearAllowance,
+          totalAllowance: assetAllowance
+        };
+        
+        totalCapitalAllowance += assetAllowance;
+      });
     }
+    
     taxableIncome -= totalCapitalAllowance;
     
     // Ensure taxable income is not negative
@@ -735,13 +916,14 @@ export default function TaxPlanningPage() {
       grossProfit,
       operatingProfit,
       taxableIncome,
-      taxDue,
-      aidsLevy,
-      totalTax,
+      taxDue: Math.max(taxDue, 0), // Ensure non-negative
+      aidsLevy: Math.max(aidsLevy, 0), // Ensure non-negative
+      totalTax: Math.max(totalTax, 0), // Ensure non-negative
       costOfGoodsSold,
       operatingExpenses: totalOperatingExpenses,
       nonDeductibleExpenses: totalNonDeductibleExpenses,
-      capitalAllowances: totalCapitalAllowance
+      capitalAllowances: Math.max(totalCapitalAllowance, 0), // Ensure non-negative
+      detailedCapitalAllowances: Object.keys(detailedCapitalAllowances).length > 0 ? detailedCapitalAllowances : null
     };
   };
 
@@ -823,7 +1005,7 @@ export default function TaxPlanningPage() {
             Comprehensive Tax Planning
           </h1>
           <p className="text-gray-300 mt-2">
-            Professional tax computation mirroring QPD Income Tax format
+            Professional tax computation with enhanced capital allowance calculations
           </p>
         </header>
 
@@ -890,7 +1072,7 @@ export default function TaxPlanningPage() {
                 {activeTab === "capital-allowance" && (
                   <div className="bg-green-900/20 p-4 rounded-lg border border-green-700/30">
                     <p className="text-sm text-green-300">
-                      💡 <strong>Capital Allowances:</strong> Enter asset values to claim tax deductions. These reduce your taxable income.
+                      💡 <strong>Capital Allowances:</strong> Enter asset values to claim tax deductions using enhanced calculation methods from the Excel template.
                     </p>
                   </div>
                 )}
@@ -1007,36 +1189,41 @@ export default function TaxPlanningPage() {
                 </div>
               )}
 
-              {/* Capital Allowance Form */}
+              {/* Enhanced Capital Allowance Form */}
               {activeTab === "capital-allowance" && (
                 <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                     <InputField
-                      label="Motor Vehicles"
+                      label="Motor Vehicles Cost"
                       value={formState.motorVehicles}
                       onChange={handleChange("motorVehicles")}
                     />
                     <InputField
-                      label="Moveable Assets"
+                      label="Moveable Assets Cost"
                       value={formState.moveableAssets}
                       onChange={handleChange("moveableAssets")}
                     />
                     <InputField
-                      label="Commercial Buildings"
+                      label="Commercial Buildings Cost"
                       value={formState.commercialBuildings}
                       onChange={handleChange("commercialBuildings")}
                     />
                     <InputField
-                      label="Industrial Buildings"
+                      label="Industrial Buildings Cost"
                       value={formState.industrialBuildings}
                       onChange={handleChange("industrialBuildings")}
                     />
                     <InputField
-                      label="Lease Improvements"
+                      label="Lease Improvements Cost"
                       value={formState.leaseImprovements}
                       onChange={handleChange("leaseImprovements")}
                     />
                   </div>
+                  
+                  <CapitalAllowanceCalculator 
+                    formState={formState} 
+                    onUpdate={handleCapitalAllowanceUpdate}
+                  />
                 </div>
               )}
 
@@ -1068,13 +1255,13 @@ export default function TaxPlanningPage() {
                 </div>
               )}
 
-              {/* Results Display */}
+              {/* Enhanced Results Display with Capital Allowance Details */}
               {results.comprehensive && (
                 <div className="mt-8 p-6 bg-gray-900 rounded-lg border border-lime-700/30">
                   <h3 className="text-xl font-semibold text-lime-400 mb-4 flex items-center gap-2">
                     <span>📊</span> Tax Computation Results
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm mb-6">
                     <div className="bg-gray-800 p-4 rounded-lg">
                       <div className="text-gray-400">Taxable Income</div>
                       <div className="text-lime-400 font-medium text-lg">${(results.comprehensive.taxableIncome || 0).toLocaleString()}</div>
@@ -1092,6 +1279,32 @@ export default function TaxPlanningPage() {
                       <div className="text-lime-400 font-medium text-lg">${(results.comprehensive.totalTax || 0).toLocaleString()}</div>
                     </div>
                   </div>
+                  
+                  {/* Capital Allowance Breakdown */}
+                  {results.comprehensive.detailedCapitalAllowances && (
+                    <div className="mt-4 p-4 bg-gray-800 rounded-lg border border-gray-700">
+                      <h4 className="text-md font-semibold text-lime-300 mb-3">Capital Allowance Breakdown</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+                        {Object.entries(results.comprehensive.detailedCapitalAllowances).map(([assetType, details]) => (
+                          <div key={assetType} className="bg-gray-700 p-3 rounded">
+                            <div className="font-medium text-lime-400 capitalize mb-2">
+                              {assetType.replace(/([A-Z])/g, ' $1')}
+                            </div>
+                            <div className="text-gray-300 space-y-1">
+                              <div>Cost: ${details.cost.toLocaleString()}</div>
+                              <div>Allowance: ${details.totalAllowance.toLocaleString()}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-3 pt-3 border-t border-gray-600">
+                        <div className="flex justify-between font-semibold text-lime-300">
+                          <span>Total Capital Allowances:</span>
+                          <span>${(results.comprehensive.capitalAllowances || 0).toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   
                   {results.comprehensive.aiExplanation && (
                     <div className="mt-6 p-4 bg-gray-800 rounded-lg border border-gray-700">
@@ -1115,7 +1328,7 @@ export default function TaxPlanningPage() {
               <h3 className="text-lg font-semibold text-lime-400 mb-3">
                 Tax Breakdown Visualization
               </h3>
-              <div className="h-64">
+              <div className="h-80"> {/* Increased height from h-64 to h-80 */}
                 <ComprehensiveChartPanel results={results} />
               </div>
             </div>
@@ -1144,16 +1357,119 @@ export default function TaxPlanningPage() {
               </div>
             </div>
 
-            <div className="bg-gray-800 rounded-2xl p-6 shadow-lg">
-              <h3 className="text-lg font-semibold text-lime-400 mb-3">
-                QPD Tax Tips
+            <div className="bg-gray-800 rounded-2xl p-6 shadow-lg border border-lime-800/30">
+              <h3 className="text-lg font-semibold text-lime-400 mb-4 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Capital Allowance Rates
               </h3>
-              <ul className="text-gray-300 text-sm space-y-2">
-                <li>• Use capital allowances to reduce taxable income</li>
-                <li>• IMTT is 50% deductible for tax purposes</li>
-                <li>• Keep detailed records of all business expenses</li>
-                <li>• Consider timing of asset purchases for optimal allowances</li>
-              </ul>
+              
+              <div className="space-y-3">
+                {/* Motor Vehicles */}
+                <div className="bg-gradient-to-r from-lime-900/20 to-green-900/10 p-3 rounded-lg border border-lime-700/20">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-medium text-lime-300 text-sm">Motor Vehicles</span>
+                    <span className="text-xs bg-lime-500/20 text-lime-300 px-2 py-1 rounded-full">Best Value</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div className="text-center">
+                      <div className="text-gray-400">Special</div>
+                      <div className="text-lime-400 font-semibold">50%</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-gray-400">Accelerated</div>
+                      <div className="text-lime-400 font-semibold">25%</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-gray-400">Wear & Tear</div>
+                      <div className="text-lime-400 font-semibold">20%</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Moveable Assets */}
+                <div className="bg-gradient-to-r from-lime-900/15 to-green-900/10 p-3 rounded-lg border border-lime-700/15">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-medium text-lime-300 text-sm">Moveable Assets</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div className="text-center">
+                      <div className="text-gray-400">Special</div>
+                      <div className="text-lime-400 font-semibold">50%</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-gray-400">Accelerated</div>
+                      <div className="text-lime-400 font-semibold">25%</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-gray-400">Wear & Tear</div>
+                      <div className="text-lime-400 font-semibold">10%</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Commercial Buildings */}
+                <div className="bg-gradient-to-r from-gray-700/20 to-gray-600/10 p-3 rounded-lg border border-gray-600/20">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-medium text-gray-300 text-sm">Commercial Buildings</span>
+                  </div>
+                  <div className="flex justify-center">
+                    <div className="text-center">
+                      <div className="text-gray-400">Wear & Tear</div>
+                      <div className="text-lime-400 font-semibold text-lg">2.5%</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Industrial Buildings */}
+                <div className="bg-gradient-to-r from-gray-700/20 to-gray-600/10 p-3 rounded-lg border border-gray-600/20">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-medium text-gray-300 text-sm">Industrial Buildings</span>
+                  </div>
+                  <div className="flex justify-center">
+                    <div className="text-center">
+                      <div className="text-gray-400">Wear & Tear</div>
+                      <div className="text-lime-400 font-semibold text-lg">5%</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Lease Improvements */}
+                <div className="bg-gradient-to-r from-lime-900/15 to-green-900/10 p-3 rounded-lg border border-lime-700/15">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-medium text-lime-300 text-sm">Lease Improvements</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div className="text-center">
+                      <div className="text-gray-400">Special</div>
+                      <div className="text-lime-400 font-semibold">50%</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-gray-400">Accelerated</div>
+                      <div className="text-lime-400 font-semibold">25%</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-gray-400">Wear & Tear</div>
+                      <div className="text-lime-400 font-semibold">5%</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Legend */}
+              <div className="mt-4 pt-3 border-t border-gray-700">
+                <div className="flex items-center justify-between text-xs text-gray-400">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-lime-500/30 rounded"></div>
+                    <span>Multiple Allowances</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-gray-600/30 rounded"></div>
+                    <span>Single Allowance</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </aside>
         </div>
@@ -1203,57 +1519,148 @@ function ComprehensiveChartPanel({ results }) {
 
   const { comprehensive } = results;
   
+  // Fix: Ensure we have proper data structure for tax breakdown
   const taxBreakdownData = [
-    { name: 'Income Tax', value: comprehensive.taxDue || 0 },
-    { name: 'AIDS Levy', value: comprehensive.aidsLevy || 0 },
-    { name: 'Previous Loss', value: Math.abs(comprehensive.lossBroughtForward) || 0 },
+    { 
+      name: 'Income Tax', 
+      value: Math.max(comprehensive.taxDue || 0, 0.01) // Ensure minimum value for display
+    },
+    { 
+      name: 'AIDS Levy', 
+      value: Math.max(comprehensive.aidsLevy || 0, 0.01) // Ensure minimum value for display
+    },
   ];
 
-  const expenseData = [
-    { name: 'COGS', value: comprehensive.costOfGoodsSold || 0 },
-    { name: 'Operating Exp', value: comprehensive.operatingExpenses || 0 },
-    { name: 'Non-Deductible', value: comprehensive.nonDeductibleExpenses || 0 },
+  // Fix: Proper capital allowance data extraction
+  const capitalAllowanceData = comprehensive.detailedCapitalAllowances ? 
+    Object.entries(comprehensive.detailedCapitalAllowances).map(([assetType, details]) => ({
+      name: assetType.replace(/([A-Z])/g, ' $1').trim().substring(0, 12), // Shorter names for display
+      value: Math.max(details.totalAllowance || 0, 0.01) // Ensure minimum value
+    })) : [
+    { name: 'No Data', value: 0.01 }
   ];
+
+  // Fix: Add proper label formatter for pie chart
+  const renderCustomizedLabel = ({
+    cx, cy, midAngle, innerRadius, outerRadius, percent, index
+  }) => {
+    if (percent === 0) return null;
+    
+    const RADIAN = Math.PI / 180;
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    return (
+      <text 
+        x={x} 
+        y={y} 
+        fill="white" 
+        textAnchor={x > cx ? 'start' : 'end'} 
+        dominantBaseline="central"
+        fontSize={12}
+        fontWeight="bold"
+      >
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    );
+  };
 
   return (
     <div className="w-full h-full flex flex-col md:flex-row gap-4">
-      {/* Tax Breakdown Pie Chart */}
+      {/* Tax Breakdown Pie Chart - FIXED */}
       <div className="flex-1 min-h-[160px]">
-        <ResponsiveContainer width="100%" height={220}>
+        <div className="text-center text-sm text-gray-400 mb-2">Tax Breakdown</div>
+        <ResponsiveContainer width="100%" height={200}>
           <PieChart>
             <Pie
               data={taxBreakdownData}
               dataKey="value"
               nameKey="name"
+              cx="50%"
+              cy="50%"
               innerRadius={40}
               outerRadius={80}
-              paddingAngle={5}
-              label
+              paddingAngle={2}
+              label={renderCustomizedLabel}
+              labelLine={false}
               animationDuration={800}
             >
               {taxBreakdownData.map((entry, index) => (
                 <Cell
                   key={`cell-${index}`}
                   fill={COLORS[index % COLORS.length]}
+                  stroke="#1f2937"
+                  strokeWidth={2}
                 />
               ))}
             </Pie>
-            <Tooltip formatter={(value) => [`$${value}`, "Value"]} />
-            <Legend verticalAlign="bottom" height={36} />
+            <Tooltip 
+              formatter={(value, name) => [
+                `$${typeof value === 'number' ? value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : value}`,
+                name
+              ]}
+            />
+            <Legend 
+              verticalAlign="bottom" 
+              height={36}
+              formatter={(value, entry) => (
+                <span style={{ color: '#d1d5db', fontSize: '12px' }}>{value}</span>
+              )}
+            />
           </PieChart>
         </ResponsiveContainer>
       </div>
 
-      {/* Expenses Bar Chart */}
+      {/* Capital Allowance Bar Chart - FIXED */}
       <div className="flex-1 min-h-[160px]">
-        <ResponsiveContainer width="100%" height={235}>
-          <BarChart data={expenseData} animationDuration={800}>
-            <XAxis dataKey="name" stroke="#9CA3AF" />
-            <YAxis stroke="#9CA3AF" />
-            <Tooltip formatter={(value) => [`$${value}`, "Value"]} />
-            <Legend verticalAlign="top" />
-            <Bar dataKey="value" fill="#f97316" radius={[6, 6, 0, 0]}>
-              <LabelList dataKey="value" position="top" fill="#e5e7eb" />
+        <div className="text-center text-sm text-gray-400 mb-2">Capital Allowances</div>
+        <ResponsiveContainer width="100%" height={200}>
+          <BarChart 
+            data={capitalAllowanceData} 
+            margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+            animationDuration={800}
+          >
+            <XAxis 
+              dataKey="name" 
+              stroke="#9CA3AF" 
+              fontSize={12}
+              angle={-45}
+              textAnchor="end"
+              height={60}
+            />
+            <YAxis 
+              stroke="#9CA3AF" 
+              fontSize={12}
+              tickFormatter={(value) => `$${value.toLocaleString()}`}
+            />
+            <Tooltip 
+              formatter={(value, name) => [
+                `$${typeof value === 'number' ? value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : value}`,
+                'Allowance'
+              ]}
+              labelFormatter={(label) => `Asset: ${label}`}
+              contentStyle={{ 
+                backgroundColor: '#1f2937', 
+                border: '1px solid #374151',
+                borderRadius: '8px',
+                color: 'white'
+              }}
+            />
+            <Bar 
+              dataKey="value" 
+              fill="#84cc16" 
+              radius={[4, 4, 0, 0]}
+              stroke="#65a30d"
+              strokeWidth={1}
+            >
+              <LabelList 
+                dataKey="value" 
+                position="top" 
+                fill="#e5e7eb"
+                fontSize={11}
+                formatter={(value) => `$${value > 1000 ? `${(value/1000).toFixed(0)}k` : value.toLocaleString()}`}
+              />
             </Bar>
           </BarChart>
         </ResponsiveContainer>
@@ -1277,6 +1684,7 @@ function ComprehensiveSummaryPanel({ results }) {
     { label: "Gross Profit", value: comprehensive.grossProfit || 0 },
     { label: "Operating Profit", value: comprehensive.operatingProfit || 0 },
     { label: "Taxable Income", value: comprehensive.taxableIncome || 0 },
+    { label: "Capital Allowances", value: comprehensive.capitalAllowances || 0 },
     { label: "Total Tax", value: comprehensive.totalTax || 0 },
   ];
   
