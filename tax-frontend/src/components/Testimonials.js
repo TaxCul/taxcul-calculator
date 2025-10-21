@@ -10,7 +10,7 @@ const testimonials = [
     role: "Project Manager",
     quote: "This calculator saved me hours every month. It's accurate and easy to use!",
     rating: 5,
-    company: "Tech Solutions Ltd"
+    company: "Code Mafia Org"
   },
   {
     name: "Chirwa K.",
