@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Tax Calculator App",
-  description: "Developed by Code Mafia",
+  title: "TaxCul App",
+  description: "A comprehensive web application for calculating various types of taxes in Zimbabwe. Built with Next.js, React, and modern web technologies.",
 };
 
 export default function RootLayout({ children }) {
