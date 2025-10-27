@@ -99,13 +99,13 @@ export default function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
         >
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6">
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
             <span className="bg-gradient-to-r from-lime-400 via-white to-cyan-400 bg-clip-text text-transparent">
-              Smart Tax
+              Smart Tax Calculator
             </span>
             <br />
             <span className="bg-gradient-to-r from-cyan-400 via-white to-lime-400 bg-clip-text text-transparent">
-              Calculations
+              to Simplify Your Finances
             </span>
           </h1>
         </motion.div>
@@ -117,8 +117,8 @@ export default function Hero() {
           transition={{ duration: 0.8, delay: 0.4 }}
           className="text-xl md:text-2xl text-gray-300 mt-6 mb-8 max-w-3xl mx-auto leading-relaxed"
         >
-          AI-powered tax computation platform for individuals, businesses, 
-          and tax professionals in Zimbabwe. Accurate, fast, and compliant.
+          AI-powered tax calculations platform for individuals, businesses, and tax professionals in
+           Zimbabwe. Guaranteed compliance accurately and quickly.
         </motion.p>
 
         {/* Feature Highlights */}

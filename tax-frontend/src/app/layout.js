@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "TaxCul App",
-  description: "A comprehensive web application for calculating various types of taxes in Zimbabwe. Built with Next.js, React, and modern web technologies.",
+  title: "Tax Calculator Zimbabwe | TaxCul App",
+  description: "Simplify your tax calculations with our easy-to-use AI-powered tax calculator specifically designed for the Zimbabwean environment. Fast, quick, and compliant.",
 };
 
 export default function RootLayout({ children }) {

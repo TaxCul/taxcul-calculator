@@ -210,7 +210,7 @@ export default function Home() {
     },
     {
       icon: FiTrendingUp,
-      title: "Always Accurate",
+      title: "Improved Accuracy",
       description: "Updated with latest tax laws and rates"
     },
     {
@@ -275,10 +275,12 @@ export default function Home() {
               transition={{ duration: 0.6 }}
             >
               <h2 className="text-3xl md:text-4xl font-bold text-lime-400 mb-4">
-                Why Choose Our Platform?
+                Why Choose Our Tax Calculator?
               </h2>
               <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-                Experience the future of tax computation with cutting-edge technology and user-friendly design
+                Time to ditch complicated tax calculations and confusion. Our Smart Tax Calculator is built to make your life easier. 
+                In just a few clicks, you’ll get clear results you can trust, helping you plan better and make confident financial decisions. 
+                All calculations secured & encrypted.
               </p>
             </motion.div>
 
@@ -316,7 +318,7 @@ export default function Home() {
               transition={{ duration: 0.6 }}
             >
               <h2 className="text-3xl md:text-4xl font-bold text-lime-400 mb-4">
-                Featured Calculators
+                Try Our Top Featured Calculators
               </h2>
               <p className="text-xl text-gray-300 max-w-3xl mx-auto">
                 Our most powerful tools for comprehensive tax planning and calculations
@@ -364,10 +366,10 @@ export default function Home() {
               transition={{ duration: 0.6 }}
             >
               <h3 className="text-2xl font-semibold text-lime-400 mb-6">
-                All Tax Calculators
+                Choose a Tax Calculator That Fits Your Needs
               </h3>
               <p className="text-gray-400 mb-8">
-                Complete suite of specialized tax calculators for every need
+                Effortless Tax Calculations for Every Sector in Zimbabwe
               </p>
             </motion.div>
 
